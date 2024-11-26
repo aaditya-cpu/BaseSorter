@@ -20,16 +20,16 @@ class DB_File_Cleanup {
         );
     }
 
-    public function enqueue_assets($hook_suffix) {
-        if ($hook_suffix === 'toplevel_page_db-file-cleanup') {
-            wp_enqueue_style('glass-css', plugin_dir_url(__FILE__) . '../assets/css/glassmorphism.css');
-            wp_enqueue_script('admin-js', plugin_dir_url(__FILE__) . '../assets/js/admin.js', ['jquery'], null, true);
-            wp_localize_script('admin-js', 'dbFileCleanup', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('delete_nonce'),
-            ]);
-        }
+public function enqueue_assets($hook_suffix) {
+    if ($hook_suffix === 'toplevel_page_db-file-cleanup') {
+        wp_enqueue_style('glass-css', DB_FILE_CLEANUP_URL . 'assets/css/glassmorphism.css', [], null);
+        wp_enqueue_script('admin-js', DB_FILE_CLEANUP_URL . 'assets/js/admin.js', ['jquery'], null, true);
+        wp_localize_script('admin-js', 'dbFileCleanup', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('delete_nonce'),
+        ]);
     }
+}
 
     public function render_admin_page() {
         include plugin_dir_path(__FILE__) . '../admin/admin-page.php';
