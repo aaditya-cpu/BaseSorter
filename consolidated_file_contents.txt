@@ -1,0 +1,535 @@
+### Consolidated File Contents
+
+
+#### File: database-file-cleanup/admin/admin-ajax.php
+
+<?php
+
+add_action('wp_ajax_delete_selected_items', 'delete_selected_items_callback');
+
+function delete_selected_items_callback() {
+    check_ajax_referer('delete_nonce', 'nonce');
+    check_user_permissions();
+
+    $items = isset($_POST['items']) ? $_POST['items'] : [];
+
+    foreach ($items as $item) {
+        if ($item['type'] === 'database') {
+            $table_name = sanitize_text_field($item['name']);
+            delete_database_table($table_name);
+        } elseif ($item['type'] === 'file') {
+            $file_path = sanitize_text_field($item['path']);
+            delete_files([$file_path]);
+        }
+    }
+
+    wp_send_json_success([
+        'message' => __('Selected items have been deleted successfully.', 'db-file-cleanup'),
+    ]);
+}
+
+---
+
+
+#### File: database-file-cleanup/admin/admin-page.php
+
+<div class="wrap">
+    <h1>Database & File Cleanup Utility</h1>
+    <div class="glass-container">
+        <h2>Database Analysis</h2>
+        <p>Review abandoned tables below and safely delete them to free up space.</p>
+        <table class="wp-list-table widefat striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all-databases"></th>
+                    <th>Database Table Name</th>
+                    <th>Size</th>
+                </tr>
+            </thead>
+            <tbody id="database-list">
+                <?php
+                // Fetch abandoned databases dynamically
+                $databases = scan_for_abandoned_databases(); // Function from db-functions.php
+                if (!empty($databases)) {
+                    foreach ($databases as $database) {
+                        echo '<tr>
+                                <td><input type="checkbox" class="database-checkbox" data-database-name="' . esc_attr($database) . '"></td>
+                                <td>' . esc_html($database) . '</td>
+                                <td>' . esc_html('Unknown') . '</td>
+                              </tr>';
+                    }
+                } else {
+                    echo '<tr>
+                            <td colspan="3">' . esc_html__('No abandoned databases found.', 'db-file-cleanup') . '</td>
+                          </tr>';
+                }
+                ?>
+            </tbody>
+        </table>
+
+        <h2>Duplicate Files</h2>
+        <p>Review duplicate media files and delete to save storage.</p>
+        <table class="wp-list-table widefat striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all-files"></th>
+                    <th>File Name</th>
+                    <th>Location</th>
+                    <th>Size</th>
+                </tr>
+            </thead>
+            <tbody id="file-list">
+                <?php
+                // Fetch duplicate files dynamically
+                $files = scan_for_duplicate_files(); // Function from file-functions.php
+                if (!empty($files)) {
+                    foreach ($files as $file) {
+                        $file_path = $file['path'];
+                        $file_size = $file['size'];
+
+                        echo '<tr>
+                                <td><input type="checkbox" class="file-checkbox" data-file-path="' . esc_attr($file_path) . '"></td>
+                                <td>' . esc_html(basename($file_path)) . '</td>
+                                <td>' . esc_html(dirname($file_path)) . '</td>
+                                <td>' . esc_html($file_size) . '</td>
+                              </tr>';
+                    }
+                } else {
+                    echo '<tr>
+                            <td colspan="4">' . esc_html__('No duplicate files found.', 'db-file-cleanup') . '</td>
+                          </tr>';
+                }
+                ?>
+            </tbody>
+        </table>
+
+        <button id="delete-selected" class="button-glass">Delete Selected Items</button>
+    </div>
+    <div id="loader" style="display: none; text-align: center; margin-top: 20px;">
+        <span>Processing...</span>
+    </div>
+</div>
+
+---
+
+
+#### File: database-file-cleanup/assets/css/glassmorphism.css
+
+.glass-container {
+    backdrop-filter: blur(12px);
+    background: linear-gradient(145deg, rgba(197, 200, 217, 0.25), rgba(255, 255, 255, 0.1));
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(255, 255, 255, 0.1) inset;
+    padding: 25px;
+    margin-bottom: 25px;
+    transition: all 0.3s ease-in-out;
+}
+
+.glass-container:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 6px 15px rgba(255, 255, 255, 0.2) inset;
+    transform: scale(1.02);
+}
+
+.button-glass {
+    background: linear-gradient(145deg, rgba(157, 172, 191, 0.25), rgba(255, 255, 255, 0.1));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #4C7665;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.button-glass:hover {
+    background: linear-gradient(145deg, rgba(157, 172, 191, 0.4), rgba(255, 255, 255, 0.2));
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    color: #2C4E57;
+    transform: translateY(-2px);
+}
+
+.button-glass:active {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    transform: translateY(2px);
+}
+
+/* Accessibility improvements for better focus visibility */
+.button-glass:focus {
+    outline: 2px solid rgba(76, 118, 101, 0.7);
+    outline-offset: 4px;
+}
+
+@media (max-width: 768px) {
+    .glass-container {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .button-glass {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+---
+
+
+#### File: database-file-cleanup/assets/js/admin.js
+
+jQuery(document).ready(function ($) {
+    $('#delete-selected').on('click', function () {
+        let selectedItems = []; // Gather selected items
+
+        // Collect selected databases
+        $('.database-checkbox:checked').each(function () {
+            selectedItems.push({
+                type: 'database',
+                name: $(this).data('database-name'),
+            });
+        });
+
+        // Collect selected files
+        $('.file-checkbox:checked').each(function () {
+            selectedItems.push({
+                type: 'file',
+                path: $(this).data('file-path'),
+            });
+        });
+
+        if (selectedItems.length > 0) {
+            // Confirm deletion
+            if (!confirm('Are you sure you want to delete the selected items?')) {
+                return;
+            }
+
+            $.ajax({
+                url: dbFileCleanup.ajax_url,
+                method: 'POST',
+                data: {
+                    action: 'delete_selected_items',
+                    nonce: dbFileCleanup.nonce,
+                    items: selectedItems,
+                },
+                beforeSend: function () {
+                    $('#loader').show(); // Show loading animation
+                },
+                success: function (response) {
+                    $('#loader').hide(); // Hide loading animation
+                    if (response.success) {
+                        alert(response.data.message);
+                        // Optionally refresh the page or remove deleted items from the DOM
+                        location.reload();
+                    } else {
+                        alert(response.data.message || 'An error occurred.');
+                    }
+                },
+                error: function () {
+                    $('#loader').hide();
+                    alert('Failed to delete selected items. Please try again.');
+                },
+            });
+        } else {
+            alert('No items selected for deletion.');
+        }
+    });
+});
+
+---
+
+
+#### File: database-file-cleanup/database-file-cleanup.php
+
+<?php
+/*
+Plugin Name: Database and File Cleanup Utility
+Description: An advanced plugin for WordPress to clean up databases and files, optimizing storage and performance.
+Version: 1.0
+Author: Aaditya Uzumaki
+Author URI: https://goenka.xyz
+License: AAL-1.0
+*/
+
+// Prevent direct access to the file
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Define Plugin Version
+define('DB_FILE_CLEANUP_VERSION', '1.0');
+
+// Define the plugin directory path
+define('DB_FILE_CLEANUP_PATH', plugin_dir_path(__FILE__));
+define('DB_FILE_CLEANUP_URL', plugin_dir_url(__FILE__));
+
+// Includes
+require_once DB_FILE_CLEANUP_PATH . 'includes/class-db-file-cleanup.php';
+require_once DB_FILE_CLEANUP_PATH . 'includes/db-functions.php';
+require_once DB_FILE_CLEANUP_PATH . 'includes/file-functions.php';
+require_once DB_FILE_CLEANUP_PATH . 'includes/security.php';
+
+/**
+ * Initialize the plugin
+ */
+function db_file_cleanup_init() {
+    // Instantiate the main class
+    new DB_File_Cleanup();
+}
+add_action('plugins_loaded', 'db_file_cleanup_init');
+
+/**
+ * Plugin activation hook
+ */
+function db_file_cleanup_activate() {
+    // Tasks to perform on activation
+    // E.g., add default options or create tables if needed
+    if (!current_user_can('activate_plugins')) {
+        return;
+    }
+    flush_rewrite_rules();
+}
+register_activation_hook(__FILE__, 'db_file_cleanup_activate');
+
+/**
+ * Plugin deactivation hook
+ */
+function db_file_cleanup_deactivate() {
+    // Tasks to perform on deactivation
+    if (!current_user_can('activate_plugins')) {
+        return;
+    }
+    flush_rewrite_rules();
+}
+register_deactivation_hook(__FILE__, 'db_file_cleanup_deactivate');
+
+/**
+ * Plugin uninstall hook
+ */
+function db_file_cleanup_uninstall() {
+    // Tasks to perform on uninstall
+    if (!defined('WP_UNINSTALL_PLUGIN')) {
+        exit;
+    }
+
+    // Example: Remove options or clean up database tables created by the plugin
+    delete_option('db_file_cleanup_settings');
+}
+register_uninstall_hook(__FILE__, 'db_file_cleanup_uninstall');
+
+---
+
+
+#### File: database-file-cleanup/includes/class-db-file-cleanup.php
+
+<?php
+
+class DB_File_Cleanup {
+
+    public function __construct() {
+        add_action('admin_menu', [$this, 'add_admin_page']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('wp_ajax_delete_selected_items', [$this, 'handle_deletion']);
+    }
+
+    public function add_admin_page() {
+        add_menu_page(
+            'Database & File Cleanup',
+            'Cleanup Utility',
+            'manage_options',
+            'db-file-cleanup',
+            [$this, 'render_admin_page'],
+            'dashicons-database',
+            100
+        );
+    }
+
+    public function enqueue_assets($hook_suffix) {
+        if ($hook_suffix === 'toplevel_page_db-file-cleanup') {
+            wp_enqueue_style('glass-css', plugin_dir_url(__FILE__) . '../assets/css/glassmorphism.css');
+            wp_enqueue_script('admin-js', plugin_dir_url(__FILE__) . '../assets/js/admin.js', ['jquery'], null, true);
+            wp_localize_script('admin-js', 'dbFileCleanup', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('delete_nonce'),
+            ]);
+        }
+    }
+
+    public function render_admin_page() {
+        include plugin_dir_path(__FILE__) . '../admin/admin-page.php';
+    }
+
+    public function handle_deletion() {
+        check_ajax_referer('delete_nonce', 'nonce');
+
+        $items = isset($_POST['items']) ? $_POST['items'] : [];
+        if (empty($items)) {
+            wp_send_json_error(['message' => __('No items selected.', 'db-file-cleanup')]);
+        }
+
+        foreach ($items as $item) {
+            if ($item['type'] === 'database') {
+                delete_database_table(sanitize_text_field($item['name']));
+            } elseif ($item['type'] === 'file') {
+                delete_files([sanitize_text_field($item['path'])]);
+            }
+        }
+
+        wp_send_json_success(['message' => __('Selected items have been deleted successfully.', 'db-file-cleanup')]);
+    }
+}
+
+---
+
+
+#### File: database-file-cleanup/includes/db-functions.php
+
+<?php
+
+function scan_for_abandoned_databases() {
+    global $wpdb;
+
+    // Fetch tables not associated with the current WordPress installation
+    $query = "
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = DATABASE() 
+          AND table_name NOT LIKE '{$wpdb->prefix}%'
+    ";
+
+    $results = $wpdb->get_results($query, ARRAY_A);
+
+    $abandoned_tables = [];
+    if (!empty($results)) {
+        foreach ($results as $result) {
+            $abandoned_tables[] = $result['table_name'];
+        }
+    }
+
+    return $abandoned_tables;
+}
+function delete_database_table($table_name) {
+    global $wpdb;
+
+    if (!empty($table_name)) {
+        $wpdb->query("DROP TABLE IF EXISTS `$table_name`");
+    }
+}
+
+---
+
+
+#### File: database-file-cleanup/includes/file-functions.php
+
+<?php
+
+function scan_for_duplicate_files() {
+    global $wp_filesystem;
+
+    if (empty($wp_filesystem)) {
+        require_once ABSPATH . '/wp-admin/includes/file.php';
+        WP_Filesystem();
+    }
+
+    $upload_dir = wp_get_upload_dir()['basedir'];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
+    $hash_map = [];
+    $duplicates = [];
+
+    foreach ($files as $file) {
+        if ($file->isFile()) {
+            $hash = md5_file($file->getRealPath());
+            $file_path = $file->getRealPath();
+            $file_size = filesize($file_path); // Get size in bytes
+
+            if (isset($hash_map[$hash])) {
+                $duplicates[] = [
+                    'path' => $file_path,
+                    'size' => size_format($file_size), // Convert to readable format
+                ];
+            } else {
+                $hash_map[$hash] = true;
+            }
+        }
+    }
+
+    return $duplicates;
+}
+
+
+function delete_files($file_paths) {
+    global $wp_filesystem;
+
+    if (empty($wp_filesystem)) {
+        require_once ABSPATH . '/wp-admin/includes/file.php';
+        WP_Filesystem();
+    }
+
+    foreach ($file_paths as $file_path) {
+        if ($wp_filesystem->exists($file_path)) {
+            $wp_filesystem->delete($file_path);
+        }
+    }
+}
+
+---
+
+
+#### File: database-file-cleanup/includes/security.php
+
+<?php
+
+function check_user_permissions() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Unauthorized user', 'db-file-cleanup'));
+    }
+}
+
+function verify_nonce($nonce) {
+    if (!wp_verify_nonce($nonce, 'delete_nonce')) {
+        wp_die(__('Security check failed', 'db-file-cleanup'));
+    }
+}
+
+---
+
+
+#### File: database-file-cleanup/Pasted
+
+
+---
+
+
+#### File: image.png
+
+
+---
+
+
+#### File: database-file-cleanup/README.md
+
+# Database and File Cleanup Utility
+
+**Version**: 1.0  
+**Author**: Aaditya Uzumaki  
+**Website**: [goenka.xyz](https://goenka.xyz)
+
+## Description
+An advanced plugin for cleaning up databases and files to optimize WordPress site performance.
+
+## Features
+- **Database Analysis**: Detect abandoned databases.
+- **Duplicate File Detection**: Locate and delete duplicate files.
+- **Admin Page**: User-friendly admin page with a glassmorphic interface.
+- **Backup & Undo**: Protect against accidental deletions.
+
+## Installation
+1. Download the plugin.
+2. Upload the folder to `/wp-content/plugins/`.
+3. Activate via WordPress Admin.
+
+## License
+Licensed under the **Attribution Assurance License (AAL)**.
+
+---
+
