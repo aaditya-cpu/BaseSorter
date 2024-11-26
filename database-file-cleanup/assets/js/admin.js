@@ -1,5 +1,8 @@
 jQuery(document).ready(function ($) {
     $('#delete-selected').on('click', function () {
+        $('#select-all-files').on('change', function () {
+            $('.file-checkbox').prop('checked', $(this).prop('checked'));
+        });
         let selectedItems = []; // Gather selected items
 
         // Collect selected databases

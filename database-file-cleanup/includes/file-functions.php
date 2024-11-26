@@ -9,29 +9,40 @@ function scan_for_duplicate_files() {
     }
 
     $upload_dir = wp_get_upload_dir()['basedir'];
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'docx']; // Add required file types
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
     $duplicates = [];
 
     foreach ($files as $file) {
         if ($file->isFile()) {
+            $file_extension = pathinfo($file->getFilename(), PATHINFO_EXTENSION);
+
+            // Skip if not an allowed file type
+            if (!in_array(strtolower($file_extension), $allowed_extensions)) {
+                continue;
+            }
+
             $hash = md5_file($file->getRealPath());
             $file_path = $file->getRealPath();
-            $file_size = filesize($file_path); // Get size in bytes
+            $file_size = size_format(filesize($file_path)); // Convert size to readable format
+            $file_modified = date("F d Y H:i:s.", filemtime($file_path));
 
             if (isset($hash_map[$hash])) {
                 $duplicates[] = [
                     'path' => $file_path,
-                    'size' => size_format($file_size), // Convert to readable format
+                    'size' => $file_size,
+                    'modified' => $file_modified,
                 ];
             } else {
                 $hash_map[$hash] = true;
             }
         }
     }
-
+    error_log("Skipped file: " . $file->getRealPath());
     return $duplicates;
 }
+
 
 
 function delete_files($file_paths) {

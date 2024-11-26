@@ -36,6 +36,7 @@ function delete_selected_items_callback() {
 <div class="wrap">
     <h1>Database & File Cleanup Utility</h1>
     <div class="glass-container">
+        <!-- Database Analysis Section -->
         <h2>Database Analysis</h2>
         <p>Review abandoned tables below and safely delete them to free up space.</p>
         <table class="wp-list-table widefat striped">
@@ -67,8 +68,9 @@ function delete_selected_items_callback() {
             </tbody>
         </table>
 
-        <h2>Duplicate Files</h2>
-        <p>Review duplicate media files and delete to save storage.</p>
+        <!-- Duplicate Media Files Section -->
+        <h2>Duplicate Media Files</h2>
+        <p>Review duplicate media files (e.g., images, PDFs) and delete to save storage.</p>
         <table class="wp-list-table widefat striped">
             <thead>
                 <tr>
@@ -76,35 +78,37 @@ function delete_selected_items_callback() {
                     <th>File Name</th>
                     <th>Location</th>
                     <th>Size</th>
+                    <th>Last Modified</th>
                 </tr>
             </thead>
             <tbody id="file-list">
                 <?php
                 // Fetch duplicate files dynamically
-                $files = scan_for_duplicate_files(); // Function from file-functions.php
+                $files = scan_for_duplicate_files(); // Updated function from file-functions.php
                 if (!empty($files)) {
                     foreach ($files as $file) {
-                        $file_path = $file['path'];
-                        $file_size = $file['size'];
-
                         echo '<tr>
-                                <td><input type="checkbox" class="file-checkbox" data-file-path="' . esc_attr($file_path) . '"></td>
-                                <td>' . esc_html(basename($file_path)) . '</td>
-                                <td>' . esc_html(dirname($file_path)) . '</td>
-                                <td>' . esc_html($file_size) . '</td>
+                                <td><input type="checkbox" class="file-checkbox" data-file-path="' . esc_attr($file['path']) . '"></td>
+                                <td>' . esc_html(basename($file['path'])) . '</td>
+                                <td>' . esc_html(dirname($file['path'])) . '</td>
+                                <td>' . esc_html($file['size']) . '</td>
+                                <td>' . esc_html($file['modified']) . '</td>
                               </tr>';
                     }
                 } else {
                     echo '<tr>
-                            <td colspan="4">' . esc_html__('No duplicate files found.', 'db-file-cleanup') . '</td>
+                            <td colspan="5">' . esc_html__('No duplicate media files found.', 'db-file-cleanup') . '</td>
                           </tr>';
                 }
                 ?>
             </tbody>
         </table>
 
+        <!-- Delete Selected Button -->
         <button id="delete-selected" class="button-glass">Delete Selected Items</button>
     </div>
+
+    <!-- Loader -->
     <div id="loader" style="display: none; text-align: center; margin-top: 20px;">
         <span>Processing...</span>
     </div>
@@ -180,6 +184,9 @@ function delete_selected_items_callback() {
 
 jQuery(document).ready(function ($) {
     $('#delete-selected').on('click', function () {
+        $('#select-all-files').on('change', function () {
+            $('.file-checkbox').prop('checked', $(this).prop('checked'));
+        });
         let selectedItems = []; // Gather selected items
 
         // Collect selected databases
@@ -432,20 +439,30 @@ function scan_for_duplicate_files() {
     }
 
     $upload_dir = wp_get_upload_dir()['basedir'];
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf']; // Add file types as needed
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
     $duplicates = [];
 
     foreach ($files as $file) {
         if ($file->isFile()) {
+            $file_extension = pathinfo($file->getFilename(), PATHINFO_EXTENSION);
+
+            // Skip if not an allowed file type
+            if (!in_array(strtolower($file_extension), $allowed_extensions)) {
+                continue;
+            }
+
             $hash = md5_file($file->getRealPath());
             $file_path = $file->getRealPath();
-            $file_size = filesize($file_path); // Get size in bytes
+            $file_size = size_format(filesize($file_path)); // Convert size to readable format
+            $file_modified = date("F d Y H:i:s.", filemtime($file_path));
 
             if (isset($hash_map[$hash])) {
                 $duplicates[] = [
                     'path' => $file_path,
-                    'size' => size_format($file_size), // Convert to readable format
+                    'size' => $file_size,
+                    'modified' => $file_modified,
                 ];
             } else {
                 $hash_map[$hash] = true;
