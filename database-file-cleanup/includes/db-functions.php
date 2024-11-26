@@ -13,22 +13,28 @@ function scan_for_abandoned_databases() {
         GROUP BY table_name
     ";
 
+    // Run the query
     $results = $wpdb->get_results($query, ARRAY_A);
 
+    // Check for query errors
+    if ($wpdb->last_error) {
+        error_log("Database query error: " . $wpdb->last_error);
+        return [];
+    }
+
+    // Prepare the results
     $abandoned_tables = [];
     if (!empty($results)) {
         foreach ($results as $result) {
             $abandoned_tables[] = [
-                'name' => $result['table_name'],
-                'size' => $result['table_size'] . ' MB', // Add size information
+                'name' => $result['table_name'] ?? 'Unknown',
+                'size' => isset($result['table_size']) ? $result['table_size'] . ' MB' : 'Unknown',
             ];
         }
     }
-    error_log("Skipped file: " . $file->getRealPath());
 
     return $abandoned_tables;
 }
-
 
 function delete_database_table($table_name) {
     global $wpdb;

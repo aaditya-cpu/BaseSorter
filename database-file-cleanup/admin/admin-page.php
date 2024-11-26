@@ -13,23 +13,23 @@
                 </tr>
             </thead>
             <tbody id="database-list">
-    <?php
-    $databases = scan_for_abandoned_databases();
-    if (!empty($databases)) {
-        foreach ($databases as $database) {
-            echo '<tr>
-                    <td><input type="checkbox" class="database-checkbox" data-database-name="' . esc_attr($database['name']) . '"></td>
-                    <td>' . esc_html($database['name']) . '</td>
-                    <td>' . esc_html($database['size']) . '</td>
-                  </tr>';
-        }
-    } else {
-        echo '<tr>
-                <td colspan="3">' . esc_html__('No abandoned databases found.', 'db-file-cleanup') . '</td>
-              </tr>';
-    }
-    ?>
-</tbody>
+                <?php
+                $databases = scan_for_abandoned_databases();
+                if (!empty($databases)) {
+                    foreach ($databases as $database) {
+                        echo '<tr>
+                                <td><input type="checkbox" class="database-checkbox" data-database-name="' . esc_attr($database['name']) . '"></td>
+                                <td>' . esc_html($database['name']) . '</td>
+                                <td>' . esc_html($database['size']) . '</td>
+                              </tr>';
+                    }
+                } else {
+                    echo '<tr>
+                            <td colspan="3">' . esc_html__('No abandoned databases found or query failed.', 'db-file-cleanup') . '</td>
+                          </tr>';
+                }
+                ?>
+            </tbody>
         </table>
 
         <!-- Duplicate Media Files Section -->
@@ -47,8 +47,7 @@
             </thead>
             <tbody id="file-list">
                 <?php
-                // Fetch duplicate files dynamically
-                $files = scan_for_duplicate_files(); // Updated function from file-functions.php
+                $files = scan_for_duplicate_files();
                 if (!empty($files)) {
                     foreach ($files as $file) {
                         echo '<tr>
@@ -61,7 +60,7 @@
                     }
                 } else {
                     echo '<tr>
-                            <td colspan="5">' . esc_html__('No duplicate media files found.', 'db-file-cleanup') . '</td>
+                            <td colspan="5">' . esc_html__('No duplicate media files found or directory is empty.', 'db-file-cleanup') . '</td>
                           </tr>';
                 }
                 ?>

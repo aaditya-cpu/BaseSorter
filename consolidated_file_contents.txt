@@ -49,19 +49,18 @@ function delete_selected_items_callback() {
             </thead>
             <tbody id="database-list">
                 <?php
-                // Fetch abandoned databases dynamically
-                $databases = scan_for_abandoned_databases(); // Function from db-functions.php
+                $databases = scan_for_abandoned_databases();
                 if (!empty($databases)) {
                     foreach ($databases as $database) {
                         echo '<tr>
-                                <td><input type="checkbox" class="database-checkbox" data-database-name="' . esc_attr($database) . '"></td>
-                                <td>' . esc_html($database) . '</td>
-                                <td>' . esc_html('Unknown') . '</td>
+                                <td><input type="checkbox" class="database-checkbox" data-database-name="' . esc_attr($database['name']) . '"></td>
+                                <td>' . esc_html($database['name']) . '</td>
+                                <td>' . esc_html($database['size']) . '</td>
                               </tr>';
                     }
                 } else {
                     echo '<tr>
-                            <td colspan="3">' . esc_html__('No abandoned databases found.', 'db-file-cleanup') . '</td>
+                            <td colspan="3">' . esc_html__('No abandoned databases found or query failed.', 'db-file-cleanup') . '</td>
                           </tr>';
                 }
                 ?>
@@ -83,8 +82,7 @@ function delete_selected_items_callback() {
             </thead>
             <tbody id="file-list">
                 <?php
-                // Fetch duplicate files dynamically
-                $files = scan_for_duplicate_files(); // Updated function from file-functions.php
+                $files = scan_for_duplicate_files();
                 if (!empty($files)) {
                     foreach ($files as $file) {
                         echo '<tr>
@@ -97,7 +95,7 @@ function delete_selected_items_callback() {
                     }
                 } else {
                     echo '<tr>
-                            <td colspan="5">' . esc_html__('No duplicate media files found.', 'db-file-cleanup') . '</td>
+                            <td colspan="5">' . esc_html__('No duplicate media files found or directory is empty.', 'db-file-cleanup') . '</td>
                           </tr>';
                 }
                 ?>
@@ -398,23 +396,37 @@ function scan_for_abandoned_databases() {
 
     // Fetch tables not associated with the current WordPress installation
     $query = "
-        SELECT table_name 
+        SELECT table_name, 
+               ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS table_size
         FROM information_schema.tables 
-        WHERE table_schema = DATABASE() 
+        WHERE table_schema = DATABASE()
           AND table_name NOT LIKE '{$wpdb->prefix}%'
+        GROUP BY table_name
     ";
 
+    // Run the query
     $results = $wpdb->get_results($query, ARRAY_A);
 
+    // Check for query errors
+    if ($wpdb->last_error) {
+        error_log("Database query error: " . $wpdb->last_error);
+        return [];
+    }
+
+    // Prepare the results
     $abandoned_tables = [];
     if (!empty($results)) {
         foreach ($results as $result) {
-            $abandoned_tables[] = $result['table_name'];
+            $abandoned_tables[] = [
+                'name' => $result['table_name'] ?? 'Unknown',
+                'size' => isset($result['table_size']) ? $result['table_size'] . ' MB' : 'Unknown',
+            ];
         }
     }
 
     return $abandoned_tables;
 }
+
 function delete_database_table($table_name) {
     global $wpdb;
 
@@ -439,7 +451,7 @@ function scan_for_duplicate_files() {
     }
 
     $upload_dir = wp_get_upload_dir()['basedir'];
-    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf']; // Add file types as needed
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'docx']; // Add required file types
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
     $duplicates = [];
@@ -469,9 +481,10 @@ function scan_for_duplicate_files() {
             }
         }
     }
-
+    error_log("Skipped file: " . $file->getRealPath());
     return $duplicates;
 }
+
 
 
 function delete_files($file_paths) {
