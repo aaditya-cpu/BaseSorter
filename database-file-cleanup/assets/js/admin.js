@@ -1,8 +1,5 @@
 jQuery(document).ready(function ($) {
     $('#delete-selected').on('click', function () {
-        $('#select-all-files').on('change', function () {
-            $('.file-checkbox').prop('checked', $(this).prop('checked'));
-        });
         let selectedItems = []; // Gather selected items
 
         // Collect selected databases
@@ -42,8 +39,7 @@ jQuery(document).ready(function ($) {
                     $('#loader').hide(); // Hide loading animation
                     if (response.success) {
                         alert(response.data.message);
-                        // Optionally refresh the page or remove deleted items from the DOM
-                        location.reload();
+                        location.reload(); // Reload the page to reflect changes
                     } else {
                         alert(response.data.message || 'An error occurred.');
                     }

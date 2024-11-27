@@ -1,57 +1,100 @@
+/* Updated Glass Container */
 .glass-container {
-    backdrop-filter: blur(12px);
-    background: linear-gradient(145deg, rgba(197, 200, 217, 0.25), rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(15px); /* Stronger blur for better contrast */
+    background: linear-gradient(145deg, rgba(165, 46, 56, 0.15), rgba(224, 159, 62, 0.15)); /* Blood-of-Sun-2 and 5 */
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(255, 255, 255, 0.1) inset;
+    border: 1px solid rgba(255, 243, 176, 0.3); /* Blood-of-Sun-4 */
+    box-shadow: 0 8px 20px rgba(51, 92, 103, 0.3), 0 4px 10px rgba(255, 255, 255, 0.1) inset;
     padding: 25px;
     margin-bottom: 25px;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.4s ease-in-out;
 }
 
+/* Hover Effect */
 .glass-container:hover {
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 6px 15px rgba(255, 255, 255, 0.2) inset;
-    transform: scale(1.02);
+    box-shadow: 0 12px 30px rgba(51, 92, 103, 0.5), 0 6px 15px rgba(255, 243, 176, 0.3) inset; /* Enhanced shadow contrast */
+    transform: scale(1.02); /* Slight zoom for better focus */
+    border: 1px solid rgba(224, 159, 62, 0.5); /* Blood-of-Sun-5 */
 }
 
+/* Updated Button Style */
 .button-glass {
-    background: linear-gradient(145deg, rgba(157, 172, 191, 0.25), rgba(255, 255, 255, 0.1));
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #4C7665;
-    font-weight: 600;
-    padding: 12px 24px;
-    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(165, 46, 56, 0.3), rgba(51, 92, 103, 0.2)); /* Blood-of-Sun-2 and 3 */
+    border: 1px solid rgba(255, 243, 176, 0.3); /* Blood-of-Sun-4 */
+    color: #540B0E; /* Blood-of-Sun-1 */
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 14px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease-in-out;
+    box-shadow: 0 5px 15px rgba(51, 92, 103, 0.2);
+    transition: all 0.4s ease-in-out;
 }
 
+/* Button Hover Effect */
 .button-glass:hover {
-    background: linear-gradient(145deg, rgba(157, 172, 191, 0.4), rgba(255, 255, 255, 0.2));
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-    color: #2C4E57;
-    transform: translateY(-2px);
+    background: linear-gradient(145deg, rgba(224, 159, 62, 0.4), rgba(255, 243, 176, 0.3)); /* Blood-of-Sun-5 and 4 */
+    box-shadow: 0 8px 20px rgba(51, 92, 103, 0.4), 0 6px 18px rgba(255, 255, 255, 0.2);
+    color: #FFF3B0; /* Blood-of-Sun-4 */
+    transform: translateY(-3px); /* Subtle lift effect */
 }
 
+/* Button Active Effect */
 .button-glass:active {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    transform: translateY(2px);
+    box-shadow: 0 3px 8px rgba(51, 92, 103, 0.2);
+    transform: translateY(2px); /* Push-down effect */
 }
 
-/* Accessibility improvements for better focus visibility */
+/* Accessibility Improvements */
 .button-glass:focus {
-    outline: 2px solid rgba(76, 118, 101, 0.7);
-    outline-offset: 4px;
+    outline: 2px solid rgba(165, 46, 56, 0.7); /* Blood-of-Sun-2 */
+    outline-offset: 5px;
 }
 
+/* Table Styling */
+.wp-list-table {
+    background: rgba(165, 46, 56, 0.1); /* Blood-of-Sun-2 */
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    box-shadow: 0 4px 10px rgba(51, 92, 103, 0.3); /* Blood-of-Sun-3 */
+}
+
+.wp-list-table th {
+    background: rgba(51, 92, 103, 0.3); /* Blood-of-Sun-3 */
+    color: #FFF3B0; /* Blood-of-Sun-4 */
+    padding: 15px;
+    border: none;
+    text-align: left;
+    font-weight: bold;
+}
+
+.wp-list-table td {
+    background: rgba(255, 243, 176, 0.2); /* Blood-of-Sun-4 */
+    color: #540B0E; /* Blood-of-Sun-1 */
+    padding: 12px 15px;
+    border: none;
+}
+
+/* Row Hover Effect */
+.wp-list-table tr:hover td {
+    background: rgba(224, 159, 62, 0.3); /* Blood-of-Sun-5 */
+    color: #FFF3B0; /* Blood-of-Sun-4 */
+}
+
+/* Media Query for Responsiveness */
 @media (max-width: 768px) {
     .glass-container {
-        padding: 15px;
-        margin-bottom: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
     }
 
     .button-glass {
-        padding: 10px 20px;
+        padding: 12px 24px;
         font-size: 14px;
+    }
+
+    .wp-list-table th,
+    .wp-list-table td {
+        font-size: 14px;
+        padding: 10px;
     }
 }
