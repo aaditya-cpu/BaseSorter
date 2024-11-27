@@ -14,7 +14,26 @@ function scan_for_duplicate_files() {
     }
 
     $upload_dir = wp_get_upload_dir()['basedir'];
-    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'docx']; // Add required file types
+    $allowed_extensions = [
+    // Image formats
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'avif', 'svg',
+    
+    // Document formats
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'odt', 'ods', 'odp', 'epub',
+
+    // Audio formats
+    'mp3', 'wav', 'ogg', 'flac', 'aac',
+
+    // Video formats
+    'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm',
+
+    // Compressed formats
+    'zip', 'rar', 'tar', 'gz', '7z',
+
+    // Others
+    'json', 'xml', 'csv', 'yaml'
+];
+
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
     $duplicates = [];
