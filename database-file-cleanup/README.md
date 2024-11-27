@@ -1,113 +1,119 @@
-# Database and File Cleanup Utility
-
-**Version**: 1.0  
-**Author**: Aaditya Uzumaki  
-**License**: AAL-1.0  
+```markdown
+# Database & File Cleanup Utility Plugin
 
 ## Overview
 
-The **Database and File Cleanup Utility** is a WordPress plugin designed to enhance site performance and optimize storage by identifying and removing unused database tables and duplicate media files. This user-friendly tool simplifies the cleanup process through an intuitive admin interface.
+Imagine your WordPress website as a big room where you keep all your photos, documents, and old records. Some of these records are actively used (like decorations on the walls), while others are just lying around taking up space. This plugin acts like a cleaning robot for your room. It helps you:
+
+- **Find and clean up unused database tables** (old records not connected to your WordPress site).
+- **Detect duplicate media files** (extra copies of photos or documents taking up space).
+- **Safely delete duplicates or old files** without harming the ones you're using.
+
+The plugin ensures safety by checking which files are actively used on your website and excluding them from deletion.
 
 ---
 
-## Features
+## How It Ensures Safety
 
-- **Database Analysis**: Detect and safely delete abandoned database tables.
-- **Duplicate Media File Detection**: Identify and remove duplicate media files such as images and PDFs.
-- **Bulk Actions**: Easily select multiple items for deletion.
-- **AJAX-Powered Deletion**: Ensure a seamless deletion process without page reloads.
-- **Glassmorphism UI**: Enjoy a sleek and modern interface design.
+### Step 1: Detecting Duplicate Files
+1. **Scan the uploads folder**  
+   The plugin scans the `wp-content/uploads` directory for all files.
+2. **Hash comparison**  
+   Each file's content is analyzed using hashing (like a digital fingerprint). Files with the same fingerprint are marked as duplicates.
+3. **Check against active files**  
+   Duplicates are cross-referenced with files listed in the WordPress database. Files attached to posts, pages, or used anywhere on the site are excluded.
 
----
-
-## Installation
-
-1. Download the plugin ZIP file or clone the repository.
-2. Navigate to the WordPress Admin Dashboard.
-3. Go to `Plugins` > `Add New` > `Upload Plugin`.
-4. Upload the ZIP file and click `Install Now`.
-5. Activate the plugin.
+### Step 2: Verifying Database Tables
+1. **Check for abandoned tables**  
+   Identifies database tables that don’t belong to WordPress or its plugins/themes and flags them as safe to delete.
+2. **Exclude active tables**  
+   Database tables actively used by WordPress are protected from deletion.
 
 ---
 
-## Usage
+## Key Functions
 
-1. Access the plugin via the WordPress Admin Dashboard under the "Database and File Cleanup" section.
-2. **Database Analysis**:
-   - Review the list of abandoned database tables.
-   - Select tables for deletion.
-3. **Duplicate Media Files**:
-   - View duplicate media files with details like name, location, size, and modification date.
-   - Select unwanted files for deletion.
-4. Click the **Delete Selected Items** button to remove the selected items.
+### File Functions
+- **`scan_for_duplicate_files()`**
+  - Finds duplicate files in the uploads folder.
+  - Compares file fingerprints and marks unused duplicates for deletion.
+  - Protects files actively used on the website.
+- **`delete_files($file_paths)`**
+  - Deletes selected files from the server.
+  - Double-checks that files aren’t listed as active before deletion.
+- **`get_used_files()`**
+  - Queries the WordPress database to get a list of files currently used in posts or pages.
+  - Ensures these files are never flagged as duplicates.
 
----
-
-## Screenshots
-
-### Database Analysis
-- Displays a list of abandoned database tables with sizes.
-
-### Duplicate Media Files
-- Provides a table view of duplicate media files with key attributes for review.
-
----
-
-## Technical Details
-
-### File Structure
-
-- `database-file-cleanup.php`: Main plugin file, includes initialization and lifecycle hooks.
-- `admin/admin-page.php`: Renders the plugin admin page with database and file listings.
-- `admin/admin-ajax.php`: Handles AJAX requests for item deletion.
-- `assets/css/glassmorphism.css`: Provides modern UI styling with a glassmorphism design.
-- `assets/js/admin.js`: Implements interactive functionality with jQuery.
-
-### Hooks Used
-
-- **`plugins_loaded`**: Initializes the plugin.
-- **`register_activation_hook`**: Executes tasks on plugin activation.
-- **`register_deactivation_hook`**: Handles cleanup tasks on deactivation.
-- **`register_uninstall_hook`**: Cleans up plugin data on uninstall.
+### Database Functions
+- **`scan_for_abandoned_databases()`**
+  - Checks for tables in the database that don’t belong to WordPress.
+  - Lists these tables for deletion.
+- **`delete_database_table($table_name)`**
+  - Safely deletes selected database tables if marked as unused.
 
 ---
 
-## Security Measures
+## Practical Flow of the Plugin
 
-- **Nonce Validation**: Prevents CSRF attacks during AJAX requests.
-- **User Permissions Check**: Ensures only authorized users can delete items.
-- **Sanitization**: All inputs are sanitized before processing.
+### Admin Interface
+- Displays two sections: **Unused Database Tables** and **Duplicate Files**.
+- Provides checkboxes for selecting items to delete.
 
----
+### Safety Net
+- Ensures selected files and database tables are not actively used before deletion.
 
-## Glassmorphism UI Design
-
-The plugin employs a visually appealing glassmorphism design:
-- **Backdrop Blur**: Enhances contrast while maintaining a modern aesthetic.
-- **Dynamic Hover Effects**: Adds interactivity with smooth transitions.
-- **Responsive Design**: Ensures usability across all devices.
+### AJAX for Real-Time Deletion
+- When "Delete Selected Items" is clicked, selected items are sent to the server.
+- Files are rechecked before deletion to prevent accidental removal.
 
 ---
 
-## Contributing
+## Example Scenarios
 
-Contributions are welcome! Follow these steps to contribute:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature-name`).
-3. Commit your changes (`git commit -m "Add feature-name"`).
-4. Push to the branch (`git push origin feature-name`).
-5. Open a pull request.
+### Scenario: Duplicate Image
+- Files: `image1.jpg` (used in a post) and `image1-copy.jpg` (not used).
+- The plugin detects the duplicate, confirms `image1.jpg` is used, and flags only `image1-copy.jpg` for deletion.
 
----
-
-## License
-
-This plugin is licensed under the **AAL-1.0**. See the [LICENSE](LICENSE) file for more details.
+### Scenario: Database Cleanup
+- A plugin you uninstalled left behind a table in the database.
+- The plugin detects it as abandoned and lists it for deletion.
 
 ---
 
-## Support
+## Why This Plugin is Safe
 
-For issues or feature requests, contact the author at [Aaditya Uzumaki](https://goenka.xyz).
+1. **Cross-Verification**  
+   Actively used files are checked in the database before deletion.
+2. **Fallback Mechanisms**  
+   Files in doubt are excluded from deletion.
+3. **Minimal Impact**  
+   Only removes duplicates and unused tables/files, ensuring website operation is unaffected.
 
 ---
+
+## How to Use the Plugin
+
+1. **Install the Plugin**
+   - Upload the plugin to your WordPress site and activate it.
+
+2. **Access the Admin Page**
+   - Navigate to **"Database & File Cleanup Utility"** in the WordPress admin menu.
+
+3. **Review Items**
+   - Review the lists of duplicate files and unused database tables.
+
+4. **Delete Selected Items**
+   - Check the boxes for items you want to delete and click the **"Delete Selected Items"** button.
+
+5. **Confirmation**
+   - A final check ensures nothing important is deleted.
+
+---
+
+## Attribution and License
+
+This plugin is developed by **Aaditya Uzumaki** under the **AAL-1.0 License**. It utilizes WordPress core functions and complies with open-source standards. For more details, visit the plugin author's website.
+
+Feel free to reach out with suggestions or feedback to make this cleaning robot even better!
+```
