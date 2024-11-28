@@ -4,8 +4,7 @@
  * Scans the upload directory for duplicate files while excluding files actively used on the website.
  *
  * @return array List of duplicate files with their metadata.
- */
-function scan_for_duplicate_files() {
+ */function scan_for_duplicate_files() {
     global $wp_filesystem;
 
     if (empty($wp_filesystem)) {
@@ -35,13 +34,13 @@ function scan_for_duplicate_files() {
     ];
 
     // Folders and file patterns to exclude
-    $excluded_folders = ['photo-gallery']; // Add plugin-specific folder names here
-    $thumbnail_patterns = ['-150x150', '-300x300', '_thumb', '_small', '_large']; // Add common thumbnail suffixes
+    $excluded_folders = ['photo-gallery']; // Plugin-specific folders to ignore
+    $thumbnail_patterns = ['-150x150', '-300x300', '_thumb', '_small', '_large']; // Thumbnail naming patterns
 
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
     $duplicates = [];
-    $used_files = get_used_files(); // Get the list of used files from the database
+    $used_files = get_used_files(); // List of files actively used in WordPress
 
     foreach ($files as $file) {
         if ($file->isFile()) {
@@ -58,41 +57,45 @@ function scan_for_duplicate_files() {
             // Skip excluded folders
             foreach ($excluded_folders as $folder) {
                 if (strpos($file_path, DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR) !== false) {
-                    continue 2; // Skip this file entirely
+                    continue 2; // Skip this file
                 }
             }
 
             // Skip files matching thumbnail patterns
             foreach ($thumbnail_patterns as $pattern) {
                 if (strpos($file->getFilename(), $pattern) !== false) {
-                    continue 2; // Skip this file entirely
+                    continue 2; // Skip this file
                 }
             }
 
-            // Skip if the file is marked as used
+            // Skip actively used files
             if (in_array($file_url, $used_files)) {
                 continue;
             }
 
+            // Generate hash to identify duplicates
             $hash = md5_file($file_path);
-            $file_size = size_format(filesize($file_path)); // Convert size to readable format
+            $file_size = size_format(filesize($file_path)); // Human-readable size format
             $file_modified = date("F d Y H:i:s.", filemtime($file_path));
 
             if (isset($hash_map[$hash])) {
+                // If duplicate, add to the list
                 $duplicates[] = [
                     'path' => $file_path,
-                    'url' => $file_url, // Include file URL for better traceability
+                    'url' => $file_url,
                     'size' => $file_size,
                     'modified' => $file_modified,
                 ];
             } else {
+                // Add hash to the map if unique
                 $hash_map[$hash] = true;
             }
         }
     }
 
-    return $duplicates;
+    return $duplicates; // Returns the list of duplicates for review
 }
+
 
 
 /**
