@@ -15,24 +15,28 @@ function scan_for_duplicate_files() {
 
     $upload_dir = wp_get_upload_dir()['basedir'];
     $allowed_extensions = [
-    // Image formats
-    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'avif', 'svg',
-    
-    // Document formats
-    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'odt', 'ods', 'odp', 'epub',
+        // Image formats
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp', 'avif', 'svg',
 
-    // Audio formats
-    'mp3', 'wav', 'ogg', 'flac', 'aac',
+        // Document formats
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf', 'odt', 'ods', 'odp', 'epub',
 
-    // Video formats
-    'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm',
+        // Audio formats
+        'mp3', 'wav', 'ogg', 'flac', 'aac',
 
-    // Compressed formats
-    'zip', 'rar', 'tar', 'gz', '7z',
+        // Video formats
+        'mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm',
 
-    // Others
-    'json', 'xml', 'csv', 'yaml'
-];
+        // Compressed formats
+        'zip', 'rar', 'tar', 'gz', '7z',
+
+        // Others
+        'json', 'xml', 'csv', 'yaml'
+    ];
+
+    // Folders and file patterns to exclude
+    $excluded_folders = ['photo-gallery']; // Add plugin-specific folder names here
+    $thumbnail_patterns = ['-150x150', '-300x300', '_thumb', '_small', '_large']; // Add common thumbnail suffixes
 
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($upload_dir));
     $hash_map = [];
@@ -50,6 +54,20 @@ function scan_for_duplicate_files() {
 
             $file_path = $file->getRealPath();
             $file_url = wp_get_upload_dir()['baseurl'] . str_replace($upload_dir, '', $file_path);
+
+            // Skip excluded folders
+            foreach ($excluded_folders as $folder) {
+                if (strpos($file_path, DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR) !== false) {
+                    continue 2; // Skip this file entirely
+                }
+            }
+
+            // Skip files matching thumbnail patterns
+            foreach ($thumbnail_patterns as $pattern) {
+                if (strpos($file->getFilename(), $pattern) !== false) {
+                    continue 2; // Skip this file entirely
+                }
+            }
 
             // Skip if the file is marked as used
             if (in_array($file_url, $used_files)) {
@@ -75,6 +93,7 @@ function scan_for_duplicate_files() {
 
     return $duplicates;
 }
+
 
 /**
  * Gets a list of URLs for files currently used on the website.
