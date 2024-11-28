@@ -4,7 +4,8 @@
  * Scans the upload directory for duplicate files while excluding files actively used on the website.
  *
  * @return array List of duplicate files with their metadata.
- */function scan_for_duplicate_files() {
+ */
+function scan_for_duplicate_files() {
     global $wp_filesystem;
 
     if (empty($wp_filesystem)) {
